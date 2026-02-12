@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USports Play Parser</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-app: #f1f5f9;
+            --bg-panel: #ffffff;
+            --border: #cbd5e1;
+            --border-light: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --header-bg: #f8fafc;
+            --selected-row: #e0f2fe;
+            --selected-border: #7dd3fc;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-app);
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Navbar --- */
+        header {
+            background: #1e293b;
+            color: white;
+            padding: 0 20px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        header .badge {
+            background: #334155;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        /* --- Main Layout --- */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            padding: 16px;
+            gap: 16px;
+            overflow: hidden;
+        }
+
+        /* --- Top Section (Inputs) --- */
+        .input-section {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid var(--border-light);
+            background: #f8fafc;
+            padding: 0 8px;
+        }
+
+        .tab-btn {
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover { color: var(--text-main); }
+        
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .panel { display: none; padding: 0; }
+        .panel.active { display: block; }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            border: none;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            box-sizing: border-box;
+            resize: vertical;
+            outline: none;
+            color: #334155;
+            background: #fff;
+        }
+        textarea::placeholder { color: #cbd5e1; }
+        textarea:focus { background: #fafafa; }
+
+        /* --- Toolbar --- */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px;
+            padding: 0 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+        }
+
+        .btn:hover { background: #f8fafc; border-color: #94a3b8; }
+        .btn:active { transform: translateY(1px); }
+
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+
+        .btn-danger {
+            color: var(--danger);
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+        .btn-danger:hover { background: #fee2e2; border-color: #f87171; }
+
+        .separator { width: 1px; height: 24px; background: var(--border-light); margin: 0 4px; }
+
+        select.form-select {
+            height: 32px;
+            padding: 0 24px 0 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            background-color: white;
+            cursor: pointer;
+            outline: none;
+        }
+        select.form-select:focus { border-color: var(--primary); }
+
+        .status-text {
+            margin-left: auto;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- Data Grid --- */
+        .grid-container {
+            flex: 1;
+            overflow: auto;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            position: relative;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.80rem;
+            min-width: 100%;
+            table-layout: fixed; /* Better performance */
+        }
+
+        /* Column Widths */
+        th:nth-child(1), td:nth-child(1) { width: 40px; text-align: center; } /* Seq */
+        th:nth-child(2), td:nth-child(2) { width: 45px; text-align: center; } /* Poss Seq */
+        th:nth-child(3), td:nth-child(3) { width: 60px; } /* Poss */
+        th:nth-child(4), td:nth-child(4) { width: 40px; text-align: center; } /* Down */
+        th:nth-child(5), td:nth-child(5) { width: 40px; text-align: center; } /* Dist */
+        th:nth-child(6), td:nth-child(6) { width: 50px; text-align: center; } /* F.Pos */
+        th:nth-child(7), td:nth-child(7) { width: 60px; } /* Type */
+        
+        /* Number Columns */
+        .num-col { width: 40px !important; text-align: center; color: #64748b; font-family: 'JetBrains Mono', monospace; }
+        
+        /* Description */
+        th:last-child, td:last-child { width: auto; min-width: 300px; }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--header-bg);
+        }
+
+        th {
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border-light);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.02em;
+            user-select: none;
+        }
+
+        td {
+            padding: 4px 6px;
+            border-bottom: 1px solid var(--border-light);
+            border-right: 1px solid var(--border-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 28px;
+            cursor: default;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        th:last-child, td:last-child { border-right: none; }
+
+        /* Row Selection */
+        tr.selected td {
+            background-color: var(--selected-row) !important;
+        }
+
+        /* Cell Editing */
+        td.editing {
+            padding: 0; /* Remove padding for input */
+            background: white !important;
+            outline: 2px solid var(--primary);
+            z-index: 20;
+            cursor: text;
+        }
+
+        /* Hover */
+        tr:hover td { background-color: #f8fafc; }
+        
+        /* Warnings */
+        .warn td { background-color: #fffbeb; } /* Yellow tint */
+        tr.selected.warn td { background-color: #fff7cd !important; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>
+            <span>PlayParser</span>
+            
+        </h1>
+    </header>
+
+    <div class="app-container">
+        
+        <div class="input-section">
+            <div class="tab-header">
+                <button class="tab-btn active" onclick="switchTab('playTab')">Play Text</button>
+                <button class="tab-btn" onclick="switchTab('rosterTab')">Roster Data</button>
+            </div>
+            
+            <div id="playTab" class="panel active">
+                <textarea id="playInput" placeholder="Paste raw play-by-play text here..."></textarea>
+            </div>
+            <div id="rosterTab" class="panel">
+                <textarea id="rosterInput" placeholder="Paste roster (e.g. '12 John Smith')..."></textarea>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="processAll()">Parse Data</button>
+            
+            <div class="separator"></div>
+            
+            <button class="btn" onclick="exportCSV()">Export CSV</button>
+            <button class="btn btn-danger" onclick="deleteSelected()">Delete (Del)</button>
+            
+            <div class="separator"></div>
+            
+            <select id="teamFilter" class="form-select" onchange="applyFilter()">
+                <option value="All">All Plays</option>
+                <option value="KICKS">Kicks Only</option>
+            </select>
+
+            <span class="status-text" id="statusBar">Ready</span>
+        </div>
+
+        <div class="grid-container" tabindex="0" id="tableContainer">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Seq</th>
+                        <th>#</th>
+                        <th>Poss</th>
+                        <th>Down</th>
+                        <th>Dist</th>
+                        <th>F.Pos</th>
+                        <th>Type</th>
+                        <th>QB</th>
+                        <th class="num-col">#</th>
+                        <th>Ball Carrier</th>
+                        <th class="num-col">#</th>
+                        <th>Tackler</th>
+                        <th class="num-col">#</th>
+                        <th>Gain</th>
+                        <th>Result</th>
+                        <th>Kick Type</th>
+                        <th>Kicker</th>
+                        <th class="num-col">#</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+
+    </div>
+
+<script>
+/** * LOGIC CORE
+ * (Functionality remains identical, purely UI changes)
+ */
+
+const COLUMNS = [
+    "Sequence", "Poss Seq", "Possession", "Down", "Distance", "Field Position", "Run/Pass", 
+    "QB", "QB #", "Ball Carrier", "BC #", "Tackler", "Tackler #", 
+    "Gain", "Pass Result", "Kick Type", "Kicker", "Kicker #", "Play Description"
+];
+
+const TEAM_MAP = {
+    "MTL": "Montreal", "MON": "Montreal", "SSK": "Saskatchewan", "SASK": "Saskatchewan",
+    "TOR": "Toronto", "OTT": "Ottawa", "HAM": "Hamilton", "BC": "BC",
+    "WPG": "Winnipeg", "CGY": "Calgary", "EDM": "Edmonton"
+};
+
+let allPlays = [];
+let rosterMap = {};
+let lastSelectedIndex = -1;
+let isEditing = false;
+
+// --- UI HELPERS ---
+
+function switchTab(tabId) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    const btnIndex = tabId === 'playTab' ? 0 : 1;
+    document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
+}
+
+function updateStatus(msg) {
+    document.getElementById('statusBar').textContent = msg;
+}
+
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function padNum(num) {
+    if (!num) return "";
+    return num.length === 1 ? "0" + num : num;
+}
+
+// --- PARSING ---
+function normalizeTeam(token) {
+    const t = token.trim().toUpperCase();
+    if (TEAM_MAP[t]) return TEAM_MAP[t];
+    return t.split(/\s+/).map(w => w.length <= 3 ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+}
+
+function parseRoster() {
+    const text = document.getElementById('rosterInput').value;
+    const lines = text.split('\n');
+    rosterMap = {};
+    lines.forEach(line => {
+        line = line.trim();
+        if (!line) return;
+        const startNum = line.match(/^(\d+)\s+([A-Za-z\.\'-]+(?:,?\s+[A-Za-z\.\'-]+)+)/);
+        const endNum = line.match(/^([A-Za-z\.\'-]+(?:,?\s+[A-Za-z\.\'-]+)+)\s+(\d+)/);
+        let num = "", name = "";
+        if (startNum) { num = startNum[1]; name = startNum[2]; } 
+        else if (endNum) { name = endNum[1]; num = endNum[2]; }
+        if (num && name) {
+            if (name.includes(',')) {
+                const parts = name.split(',');
+                name = parts[1].trim() + " " + parts[0].trim();
+            }
+            rosterMap[name.trim()] = num;
+        }
+    });
+}
+
+function mergeLines(text) {
+    const rawLines = text.split('\n');
+    const merged = [];
+    const isSpecial = (line) => {
+        const l = line.toLowerCase();
+        return l.includes('kickoff') || l.includes('kick attempt') || 
+               l.includes('field goal attempt') || l.includes('extra point') || 
+               l.includes(' pat ') || /two[-\s]?point/.test(l);
+    };
+    rawLines.forEach(line => {
+        if (!line.trim()) return;
+        if (/^\s/.test(line)) { 
+            if (merged.length > 0) {
+                if (isSpecial(line)) merged.push(line.trim());
+                else merged[merged.length - 1] += " " + line.trim();
+            } else merged.push(line.trim());
+        } else merged.push(line.trimEnd());
+    });
+    return merged;
+}
+
+function recalcSequences() {
+    let globalSeq = 1;
+    let teamCounters = {};
+
+    allPlays.forEach(play => {
+        play["Sequence"] = globalSeq++;
+        const team = play["Possession"] || "UNK";
+        if (!teamCounters[team]) teamCounters[team] = 0;
+        teamCounters[team]++;
+        play["Poss Seq"] = teamCounters[team];
+    });
+}
+
+function processAll() {
+    parseRoster();
+    const text = document.getElementById('playInput').value;
+    if (!text) { alert("Please paste play-by-play text first."); return; }
+    
+    const lines = mergeLines(text);
+    allPlays = [];
+    let currentPossession = "";
+    
+    // Regex Patterns
+    const reDownDist = /^(1st|2nd|3rd|4th)\s+and\s+(?:\d+|goal)\b/i;
+    const reDriveHeader = /^([A-Za-z][A-Za-z\s\.\'-]+?)\s+at\s+\d{1,2}:\d{2}\b/i;
+    const reDriveStart = /([A-Za-z][A-Za-z\s\.\'-]+?)\s+drive start\b/i;
+    const reFieldPos = /\bat\s+([A-Z]{2,3}\s*-?\s*\d+)\b/;
+    const reGain = [
+        /for (\d+) yards?/, /loss of (\d+) yards?/, /return (\d+) yards?/,
+        /punt (\d+) yards?/, /kickoff (\d+) yards?/, /sacked for (\d+) yards?/, /for no gain/
+    ];
+
+    const getGain = (str) => {
+        const lower = str.toLowerCase();
+        if (lower.includes('no gain')) return "0";
+        for (let re of reGain) {
+            const m = str.match(re);
+            if (m) {
+                let val = m[1] || "0";
+                if (lower.includes('loss') || lower.includes('sacked')) return "-" + val;
+                return val;
+            }
+        }
+        return "";
+    };
+
+    const extractName = (str, keyword) => {
+        const reStrict = new RegExp(`([A-Z][a-zA-Z\\'-]+ [A-Z][a-zA-Z\\'-]+)\\s+${keyword}`, 'i');
+        const m = str.match(reStrict);
+        if (m) return m[1];
+        if (keyword.includes('kick') || keyword.includes('punt') || keyword.includes('field')) {
+            const reFallback = /([A-Z][A-Za-z\.\'-]+(?:\s[A-Za-z\.\'-]+){0,2})\s+(kick attempt|field goal attempt|kickoff|punt)\b/i;
+            const m2 = str.match(reFallback);
+            if (m2 && m2[2].toLowerCase().includes(keyword.split(' ')[0])) return m2[1];
+        }
+        return "";
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].replace(/\s+/g, ' ').trim();
+        let lower = line.toLowerCase();
+        
+        if (line.includes('END OF') || line.includes('TIME OUT') || line.includes('TIMEOUT') || /^\s*ball on/i.test(line)) continue;
+
+        let mHead = line.match(reDriveHeader);
+        if (mHead) { currentPossession = normalizeTeam(mHead[1]); continue; }
+        let mDS = line.match(reDriveStart);
+        if (mDS) { currentPossession = normalizeTeam(mDS[1]); continue; }
+
+        let p = {
+            "_id": generateId(),
+            "Sequence": 0, "Poss Seq": 0, "Possession": currentPossession, 
+            "Down": "", "Distance": "", "Field Position": "", "Run/Pass": "",
+            "QB": "", "QB #": "", "Ball Carrier": "", "BC #": "",
+            "Tackler": "", "Tackler #": "", "Gain": "", "Pass Result": "",
+            "Kick Type": "", "Kicker": "", "Kicker #": "", "Play Description": line
+        };
+
+        let handled = false;
+
+        if (lower.includes('kick attempt') || lower.includes('extra point') || (lower.includes(' pat ') && !lower.includes('pass'))) {
+            p["Kick Type"] = lower.includes('blocked') ? "Blocked" : "PAT";
+            p["Kicker"] = extractName(line, "kick attempt") || extractName(line, "kick");
+            p["Down"] = "0"; p["Distance"] = "0";
+            const res = line.match(/\b(good|no good|blocked)\b/i);
+            p["Pass Result"] = res ? res[1] : "";
+            handled = true;
+        } else if (lower.includes('kickoff') && !line.match(reDownDist)) {
+            p["Kick Type"] = "Kickoff";
+            p["Kicker"] = extractName(line, "kickoff");
+            p["Gain"] = getGain(line);
+            handled = true;
+        } else if (lower.includes('field goal attempt') && !line.match(reDownDist)) {
+            p["Kick Type"] = "Field Goal";
+            p["Kicker"] = extractName(line, "field goal");
+            const res = line.match(/\b(good|missed|blocked|single)\b/i);
+            p["Pass Result"] = res ? res[1] : "";
+            p["Down"] = "0"; p["Distance"] = "0";
+            handled = true;
+        }
+        
+        if (!handled) {
+            const mDD = line.match(reDownDist);
+            if (!mDD) continue; 
+            const downMap = {'1st':1, '2nd':2, '3rd':3, '4th':4};
+            p["Down"] = downMap[mDD[1].toLowerCase()] || "";
+            const mDist = line.match(/\band\s+(\d+|goal)\b/i);
+            p["Distance"] = mDist ? mDist[1] : "";
+            const mFP = line.match(reFieldPos);
+            if (mFP) {
+                let raw = mFP[1].replace(/\s/g, '');
+                let teamCode = raw.match(/^[A-Z]+/)[0];
+                let yard = raw.match(/\d+$/)[0];
+                let possCode = Object.keys(TEAM_MAP).find(k => TEAM_MAP[k] === currentPossession) || currentPossession.substring(0,3).toUpperCase();
+                if (teamCode === possCode) p["Field Position"] = `-${yard}`;
+                else p["Field Position"] = yard;
+            }
+            if (lower.includes('punt')) p["Kick Type"] = "Punt";
+            if (lower.includes('field goal')) p["Kick Type"] = "Field Goal";
+            if (lower.includes('pass') || lower.includes('sacked')) p["Run/Pass"] = "Pass";
+            else if (lower.includes('rush') || lower.includes('run')) p["Run/Pass"] = "Run";
+            if (lower.includes('sacked')) {
+                p["Pass Result"] = "Sacked";
+                const mQB = line.match(/([A-Z][a-zA-Z\'-]+ [A-Z][a-zA-Z\'-]+)\s+sacked/i); 
+                if (mQB) p["QB"] = mQB[1];
+            } else if (p["Run/Pass"] === "Pass") {
+                const mQB = line.match(/([A-Z][a-zA-Z\'-]+ [A-Z][a-zA-Z\'-]+)\s+pass/i);
+                if (mQB) p["QB"] = mQB[1];
+                const mRec = line.match(/\bto\s+([A-Z][a-zA-Z\'-]+ [A-Z][a-zA-Z\'-]+)\b/i);
+                if (mRec) p["Ball Carrier"] = mRec[1];
+                if (lower.includes('intercepted')) p["Pass Result"] = "Intercepted";
+                else if (lower.includes('incomplete')) p["Pass Result"] = "Incomplete";
+                else if (lower.includes('complete')) p["Pass Result"] = "Complete";
+            } else if (p["Run/Pass"] === "Run") {
+                const mRun = line.match(/([A-Z][a-zA-Z\'-]+ [A-Z][a-zA-Z\'-]+)\s+(?:rush|run)/i);
+                if (mRun) p["Ball Carrier"] = mRun[1];
+            }
+            if (p["Kick Type"]) {
+                p["Kicker"] = extractName(line, p["Kick Type"].toLowerCase()) || extractName(line, "kick");
+            }
+            const mTack = line.match(/\(([^)]+)\)/);
+            if (mTack) p["Tackler"] = mTack[1];
+            p["Gain"] = getGain(line);
+        }
+
+        // --- Roster Lookup ---
+        ["QB", "Ball Carrier", "Kicker"].forEach(role => {
+            const name = p[role];
+            if (name && rosterMap[name]) {
+                const colKey = role === "Ball Carrier" ? "BC #" : (role === "QB" ? "QB #" : "Kicker #");
+                p[colKey] = padNum(rosterMap[name]);
+            }
+        });
+
+        // Split Tacklers
+        if (p["Tackler"]) {
+            const names = p["Tackler"].split(';').map(n => n.trim());
+            const numbers = names.map(name => {
+                const raw = rosterMap[name];
+                return raw ? padNum(raw) : "";
+            }).filter(Boolean);
+            if (numbers.length > 0) p["Tackler #"] = numbers.join("; ");
+        }
+
+        allPlays.push(p);
+    }
+
+    recalcSequences();
+    renderTable(allPlays);
+    
+    const teams = [...new Set(allPlays.map(p => p.Possession).filter(Boolean))].sort();
+    const select = document.getElementById('teamFilter');
+    while (select.options.length > 2) select.remove(2);
+    teams.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        select.appendChild(opt);
+    });
+
+    updateStatus(`Parsed ${allPlays.length} plays.`);
+}
+
+// --- RENDER & INTERACT ---
+
+function renderTable(data) {
+    const tbody = document.querySelector("#resultsTable tbody");
+    tbody.innerHTML = "";
+    
+    data.forEach((play, index) => {
+        const tr = document.createElement('tr');
+        tr.dataset.id = play._id;
+        tr.onclick = (e) => handleRowClick(e, tr);
+
+        if (!play["Run/Pass"] && !play["Kick Type"]) tr.classList.add('warn');
+
+        COLUMNS.forEach(col => {
+            const td = document.createElement('td');
+            td.textContent = play[col];
+            td.contentEditable = "false"; 
+            if (col.includes("#")) td.classList.add("num-col");
+            
+            td.ondblclick = (e) => {
+                isEditing = true;
+                td.contentEditable = "true";
+                td.focus();
+                td.classList.add('editing');
+                e.stopPropagation(); 
+            };
+            td.onblur = () => {
+                isEditing = false;
+                td.contentEditable = "false";
+                td.classList.remove('editing');
+                play[col] = td.textContent; 
+            };
+            td.onkeydown = (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    td.blur();
+                }
+            };
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+function handleRowClick(e, tr) {
+    if (isEditing) return; 
+    const rows = Array.from(document.querySelectorAll("#resultsTable tbody tr"));
+    const currentIndex = rows.indexOf(tr);
+
+    if (e.ctrlKey || e.metaKey) {
+        tr.classList.toggle('selected');
+        lastSelectedIndex = currentIndex;
+    } else if (e.shiftKey && lastSelectedIndex !== -1) {
+        const start = Math.min(lastSelectedIndex, currentIndex);
+        const end = Math.max(lastSelectedIndex, currentIndex);
+        rows.forEach(r => r.classList.remove('selected'));
+        for (let i = start; i <= end; i++) {
+            rows[i].classList.add('selected');
+        }
+    } else {
+        rows.forEach(r => r.classList.remove('selected'));
+        tr.classList.add('selected');
+        lastSelectedIndex = currentIndex;
+    }
+}
+
+function applyFilter() {
+    const val = document.getElementById('teamFilter').value;
+    let filtered = allPlays;
+    if (val === "KICKS") {
+        filtered = allPlays.filter(p => p["Kick Type"]);
+    } else if (val !== "All") {
+        filtered = allPlays.filter(p => p.Possession === val && !p["Kick Type"]);
+    }
+    renderTable(filtered);
+    updateStatus(`Showing ${filtered.length} of ${allPlays.length} plays.`);
+}
+
+function deleteSelected() {
+    if (isEditing) return;
+    const selectedRows = document.querySelectorAll("#resultsTable tbody tr.selected");
+    if (selectedRows.length === 0) return;
+    if (!confirm(`Delete ${selectedRows.length} selected row(s)?`)) return;
+    const idsToDelete = Array.from(selectedRows).map(row => row.dataset.id);
+    allPlays = allPlays.filter(p => !idsToDelete.includes(p._id));
+    recalcSequences();
+    applyFilter();
+    updateStatus(`Deleted. Total Plays: ${allPlays.length}`);
+}
+
+function exportCSV() {
+    const rows = document.querySelectorAll("#resultsTable tbody tr");
+    if (rows.length === 0) { alert("No data to export"); return; }
+    let csv = COLUMNS.join(",") + "\n";
+    rows.forEach(tr => {
+        const cells = Array.from(tr.children);
+        const line = cells.map(td => {
+            let text = td.innerText.replace(/(\r\n|\n|\r)/gm, " ");
+            if (text.includes(",")) text = `"${text}"`;
+            return text;
+        }).join(",");
+        csv += line + "\n";
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "plays_export.csv";
+    a.click();
+}
+
+document.addEventListener('keydown', function(e) {
+    if (isEditing) return;
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        const activeEl = document.activeElement;
+        if (activeEl.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            document.querySelectorAll("#resultsTable tbody tr").forEach(r => r.classList.add('selected'));
+        }
+    }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        const activeEl = document.activeElement;
+        if (activeEl.tagName !== 'TEXTAREA') {
+            deleteSelected();
+        }
+    }
+});
+
+document.addEventListener('copy', function(e) {
+    if (isEditing) return;
+    const selectedRows = document.querySelectorAll("#resultsTable tbody tr.selected");
+    if (selectedRows.length === 0) return;
+    e.preventDefault();
+    let tsv = "";
+    selectedRows.forEach(tr => {
+        const cells = Array.from(tr.children);
+        const line = cells.map(td => td.innerText.replace(/(\r\n|\n|\r)/gm, " ")).join("\t");
+        tsv += line + "\n";
+    });
+    if (e.clipboardData) {
+        e.clipboardData.setData('text/plain', tsv);
+        updateStatus(`Copied ${selectedRows.length} rows to clipboard.`);
+    }
+});
+
+</script>
+</body>
+</html>

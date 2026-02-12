@@ -78,7 +78,7 @@
             overflow: hidden;
         }
 
-        /* --- Top Section (Inputs) --- */
+        /* --- Input Section --- */
         .input-section {
             background: var(--bg-panel);
             border: 1px solid var(--border-light);
@@ -205,7 +205,7 @@
         /* --- Data Grid --- */
         .grid-container {
             flex: 1;
-            overflow: auto;
+            overflow: auto; /* Handles Horizontal & Vertical Scroll */
             background: white;
             border: 1px solid var(--border);
             border-radius: 6px;
@@ -213,27 +213,30 @@
         }
 
         table {
-            width: 100%;
+            width: auto; /* Allow auto width */
             border-collapse: collapse;
             font-size: 0.80rem;
-            min-width: 100%;
-            table-layout: fixed; /* Better performance */
+            min-width: 2200px; /* FORCE SCROLL: Table is wider than screen */
+            table-layout: fixed;
         }
 
         /* Column Widths */
-        th:nth-child(1), td:nth-child(1) { width: 40px; text-align: center; } /* Seq */
-        th:nth-child(2), td:nth-child(2) { width: 45px; text-align: center; } /* Poss Seq */
-        th:nth-child(3), td:nth-child(3) { width: 60px; } /* Poss */
-        th:nth-child(4), td:nth-child(4) { width: 40px; text-align: center; } /* Down */
-        th:nth-child(5), td:nth-child(5) { width: 40px; text-align: center; } /* Dist */
-        th:nth-child(6), td:nth-child(6) { width: 50px; text-align: center; } /* F.Pos */
-        th:nth-child(7), td:nth-child(7) { width: 60px; } /* Type */
+        th:nth-child(1), td:nth-child(1) { width: 50px; text-align: center; } /* Seq */
+        th:nth-child(2), td:nth-child(2) { width: 60px; text-align: center; } /* Poss Seq */
+        th:nth-child(3), td:nth-child(3) { width: 80px; } /* Poss */
+        th:nth-child(4), td:nth-child(4) { width: 50px; text-align: center; } /* Down */
+        th:nth-child(5), td:nth-child(5) { width: 50px; text-align: center; } /* Dist */
+        th:nth-child(6), td:nth-child(6) { width: 60px; text-align: center; } /* F.Pos */
+        th:nth-child(7), td:nth-child(7) { width: 70px; } /* Type */
         
         /* Number Columns */
-        .num-col { width: 40px !important; text-align: center; color: #64748b; font-family: 'JetBrains Mono', monospace; }
+        .num-col { width: 50px !important; text-align: center; color: #64748b; font-family: 'JetBrains Mono', monospace; }
         
-        /* Description - Auto Width */
-        th:last-child, td:last-child { width: auto; min-width: 300px; }
+        /* Description - WIDE */
+        th:last-child, td:last-child { 
+            width: auto; 
+            min-width: 600px; /* FORCE WIDE COLUMN */
+        }
 
         thead {
             position: sticky;
@@ -256,14 +259,14 @@
         }
 
         td {
-            padding: 8px 6px; /* Increased padding slightly */
+            padding: 8px 6px;
             border-bottom: 1px solid var(--border-light);
             border-right: 1px solid var(--border-light);
-            white-space: nowrap; /* Default for data columns */
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             cursor: default;
-            vertical-align: top; /* Important for wrapping */
+            vertical-align: top; /* Align to top for multiline */
             height: auto;
         }
 
@@ -284,7 +287,7 @@
 
         /* Cell Editing */
         td.editing {
-            padding: 0; /* Remove padding for input */
+            padding: 0;
             background: white !important;
             outline: 2px solid var(--primary);
             z-index: 20;
